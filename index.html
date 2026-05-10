@@ -712,6 +712,7 @@ function renderTripBody(trip){
 }
 
 function showTrip(trip){
+  hideCalendarSilent();
   currentTrip=trip;reorderMode=false;
   const btn=document.getElementById('reorderBtn');if(btn){btn.textContent='⇅ Reorder';btn.classList.remove('active')}
   renderSidebar();
