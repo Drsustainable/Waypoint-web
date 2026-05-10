@@ -386,6 +386,10 @@ function hideCalendar(){
   document.querySelector('.main').style.display='flex';
   renderDashboard();
 }
+function hideCalendarSilent(){
+  document.getElementById('calPanel').style.display='none';
+  document.querySelector('.main').style.display='flex';
+}
 function calPrevMonth(){if(calMonth===0){calMonth=11;calYear--;}else calMonth--;renderCalendar();}
 function calNextMonth(){if(calMonth===11){calMonth=0;calYear++;}else calMonth++;renderCalendar();}
 
@@ -420,7 +424,7 @@ function renderCalendar(){
     segs.slice(0,3).forEach(({seg,trip})=>{
       const color=TCOLORS[seg.type]||'#64748B';
       const emoji=TEMOJI[seg.type]||'📋';
-      html+=`<div class="cal-seg-dot" style="background:${color}18;color:${color}" onclick="showTrip(trips.find(x=>x.id==='${trip.id}'));setTimeout(()=>openSegPanel('${seg.id}'),200);hideCalendar()">${emoji} ${seg.title.length>10?seg.title.slice(0,10)+'…':seg.title}</div>`;
+      html+=`<div class="cal-seg-dot" style="background:${color}18;color:${color}" onclick="hideCalendarSilent();showTrip(trips.find(x=>x.id==='${trip.id}'));setTimeout(()=>openSegPanel('${seg.id}'),200)">${emoji} ${seg.title.length>10?seg.title.slice(0,10)+'…':seg.title}</div>`;
     });
     if(segs.length>3) html+=`<div class="cal-more">+${segs.length-3} more</div>`;
     html+='</div>';
@@ -452,7 +456,7 @@ function renderCalendar(){
       const typeCounts=segs.reduce((a,s)=>{a[s.type]=(a[s.type]||0)+1;return a},{});
       const summary=Object.entries(typeCounts).map(([t,n])=>`${TEMOJI[t]||'📋'} ${n}`).join('  ');
       const status=getStatus(trip);
-      thtml+=`<div class="cal-trip-row" onclick="showTrip(trips.find(x=>x.id==='${trip.id}'));hideCalendar()">
+      thtml+=`<div class="cal-trip-row" onclick="hideCalendarSilent();showTrip(trips.find(x=>x.id==='${trip.id}'))">
         <div class="cal-trip-bar" style="background:${statusColors[status]||'#CBD5E1'}"></div>
         <div style="flex:1"><div class="cal-trip-name">${trip.name}</div><div class="cal-trip-dates">${startFmt}${endFmt&&endFmt!==startFmt?' – '+endFmt:''}</div><div class="cal-trip-summary">${summary}</div></div>
         <div style="color:var(--muted);font-size:18px">›</div>
