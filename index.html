@@ -581,6 +581,32 @@ function renderDocs(trip){
 }
 document.getElementById('docModal').addEventListener('click',e=>{if(e.target===document.getElementById('docModal'))closeDocModal()});
 
+function getMainDestination(trip){
+  // Find the primary destination — last toLocation of a flight/train, 
+  // or hotel city, excluding home airports
+  const HOME = ['newcastle','sunderland','durham','ncl'];
+  const segs=trip.segments||[];
+  // Try flights/trains — take the furthest toLocation that isn't home
+  const transport=segs.filter(s=>['flight','train','ferry','bus'].includes(s.type));
+  for(let i=transport.length-1;i>=0;i--){
+    const loc=transport[i].toLocation;
+    if(!loc)continue;
+    const city=loc.replace(/\s*\([A-Z]{3}\)/g,'').split(',')[0].trim()
+      .replace(/\s*(International\s*Airport|Airport|Station|Terminal\s*\d*)\s*$/i,'').trim();
+    if(!HOME.some(h=>city.toLowerCase().includes(h)))return city;
+  }
+  // Fall back to hotel locations
+  const hotels=segs.filter(s=>s.type==='hotel');
+  for(const h of hotels){
+    if(h.location){
+      const parts=h.location.split(',').map(p=>p.trim());
+      for(const p of parts){
+        if(p.length>2&&!/^\d/.test(p)&&!/(United Kingdom|UK|England)$/i.test(p))return p;
+      }
+    }
+  }
+  return getCities(trip)[0]||'';
+}
 async function loadTrips(){
   try{
     trips=await api('/trips');
