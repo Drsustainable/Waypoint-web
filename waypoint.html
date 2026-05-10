@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Waypoint</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;1,9..144,300&family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--navy:#0F172A;--bg:#F4F3F0;--card:#FFFFFF;--primary:#2563EB;--text:#0F172A;--sub:#475569;--muted:#94A3B8;--border:#E2E8F0;--sans:'DM Sans',system-ui,sans-serif;--serif:'Fraunces',Georgia,serif;--mono:'DM Mono',monospace}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);height:100vh;display:flex;overflow:hidden}
+.sidebar{width:300px;min-width:300px;background:var(--navy);display:flex;flex-direction:column;height:100vh}
+.sidebar-header{padding:28px 20px 16px;border-bottom:1px solid rgba(255,255,255,0.06)}
+.logo{font-family:var(--serif);font-size:26px;font-weight:300;color:#fff;letter-spacing:-0.5px;margin-bottom:4px}
+.logo span{color:#B8962E;font-style:italic}
+.logo-sub{font-size:11px;color:#475569;text-transform:uppercase;letter-spacing:1.5px;font-weight:500}
+.sidebar-actions{padding:12px 20px;display:flex;gap:8px}
+.btn-import{flex:1;background:var(--primary);color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:600;font-family:var(--sans);cursor:pointer;transition:background 0.15s}
+.btn-import:hover{background:#1D4ED8}
+.sidebar-search{padding:0 12px 10px}
+.sidebar-search input{width:100%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:8px 12px;font-size:13px;color:#fff;font-family:var(--sans);outline:none}
+.sidebar-search input::placeholder{color:#475569}
+.sidebar-search input:focus{border-color:rgba(255,255,255,0.2)}
+.trip-list{flex:1;overflow-y:auto;padding:4px 12px 20px}
+.trip-list::-webkit-scrollbar{width:4px}
+.trip-list::-webkit-scrollbar-thumb{background:#334155;border-radius:2px}
+.section-label{font-size:10px;font-weight:600;color:#334155;text-transform:uppercase;letter-spacing:1.4px;padding:16px 8px 6px}
+.trip-item{padding:12px 10px;border-radius:8px;cursor:pointer;transition:background 0.12s;margin-bottom:2px}
+.trip-item:hover{background:rgba(255,255,255,0.05)}
+.trip-item.active{background:rgba(37,99,235,0.2)}
+.trip-item-name{font-size:14px;font-weight:600;color:#E2E8F0;margin-bottom:3px}
+.trip-item-meta{font-size:11px;color:#475569}
+.trip-status{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px}
+.status-upcoming{background:rgba(37,99,235,0.2);color:#93C5FD}
+.status-active{background:rgba(22,163,74,0.2);color:#86EFAC}
+.status-past{background:rgba(100,116,139,0.15);color:#475569}
+.seg-result{padding:10px;border-radius:8px;cursor:pointer;margin-bottom:2px;display:flex;gap:8px;align-items:flex-start}
+.seg-result:hover{background:rgba(255,255,255,0.05)}
+.seg-result-title{font-size:13px;font-weight:600;color:#E2E8F0;margin-bottom:2px}
+.seg-result-meta{font-size:11px;color:#475569}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.main-header{background:#fff;border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;height:60px;gap:12px;flex-shrink:0}
+.trip-title{font-family:var(--serif);font-size:20px;font-weight:600;color:var(--text);cursor:pointer;transition:color 0.15s;display:flex;align-items:center;gap:6px}
+.trip-title:hover{color:var(--primary)}
+.trip-title .edit-hint{font-size:13px;opacity:0.4}
+.trip-dates{font-size:13px;color:var(--muted);flex:1}
+.btn-reorder{background:none;border:1px solid var(--border);border-radius:7px;padding:7px 14px;font-size:13px;font-weight:500;color:var(--sub);cursor:pointer;font-family:var(--sans);transition:all 0.12s}
+.btn-reorder:hover,.btn-reorder.active{background:#EFF6FF;border-color:var(--primary);color:var(--primary)}
+.btn-add-seg{background:none;border:1px solid var(--border);border-radius:7px;padding:7px 14px;font-size:13px;font-weight:500;color:var(--primary);cursor:pointer;font-family:var(--sans);transition:all 0.12s}
+.btn-add-seg:hover{background:#EFF6FF;border-color:var(--primary)}
+.btn-delete-trip{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px}
+.btn-delete-trip:hover{color:#EF4444}
+.main-body{flex:1;overflow-y:auto;padding:0}
+/* Dashboard */
+.dashboard{padding:32px 36px;max-width:860px}
+.dashboard-greeting{font-family:var(--serif);font-size:30px;font-weight:300;color:var(--text);margin-bottom:4px}
+.dashboard-date{font-size:14px;color:var(--muted);margin-bottom:28px}
+.today-card{background:#0F172A;border-radius:16px;padding:20px;margin-bottom:16px}
+.today-card-header{font-size:11px;font-weight:700;color:#475569;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px}
+.today-seg{display:flex;align-items:center;gap:14px;padding:12px 0;border-top:1px solid #1E293B}
+.today-seg:first-of-type{border-top:none;padding-top:0}
+.today-dot{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;cursor:pointer;transition:opacity 0.15s}
+.today-dot:hover{opacity:0.8}
+.today-seg-title{font-size:15px;font-weight:700;color:#F1F5F9;margin-bottom:2px}
+.today-seg-meta{font-size:12px;color:#64748B}
+.countdown-badge{padding:4px 12px;border-radius:100px;font-size:12px;font-weight:700;white-space:nowrap;flex-shrink:0}
+.next-card{background:linear-gradient(135deg,#1e3a5f,#1e40af);border-radius:16px;padding:22px;margin-bottom:16px;cursor:pointer;transition:opacity 0.15s}
+.next-card:hover{opacity:0.92}
+.next-card-label{font-size:11px;font-weight:700;color:#93C5FD;letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.next-card-countdown{font-size:13px;font-weight:700;color:#60A5FA}
+.next-card-body{display:flex;align-items:center;gap:16px}
+.next-card-emoji{font-size:36px}
+.next-card-title{font-size:20px;font-weight:700;color:#F1F5F9;margin-bottom:4px}
+.next-card-meta{font-size:13px;color:#93C5FD;margin-bottom:4px}
+.next-card-ref{font-family:var(--mono);font-size:13px;color:#60A5FA}
+.no-trips{text-align:center;padding:80px 20px;color:var(--muted)}
+.no-trips-icon{font-size:52px;opacity:0.25;margin-bottom:20px}
+.no-trips-title{font-family:var(--serif);font-size:24px;font-weight:300;color:var(--sub);margin-bottom:10px}
+.no-trips-sub{font-size:14px;line-height:1.7;max-width:300px;margin:0 auto}
+/* Trip body */
+.trip-body{padding:28px 32px 48px}
+.day-header{display:flex;align-items:center;gap:12px;margin:20px 0 12px}
+.day-line{flex:1;height:1px;background:var(--border)}
+.day-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;white-space:nowrap}
+.seg-row{display:flex;align-items:stretch;margin-bottom:8px;cursor:pointer}
+.seg-row:hover .seg-card{box-shadow:0 2px 12px rgba(0,0,0,0.08)}
+.spine{width:40px;display:flex;flex-direction:column;align-items:center;flex-shrink:0}
+.spine-line{width:2px;flex:1;min-height:10px;background:#CBD5E1}
+.spine-line.hidden{opacity:0}
+.spine-dot{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.seg-card{flex:1;background:var(--card);border-radius:10px;padding:13px 16px;margin-left:6px;border-left:4px solid transparent;transition:box-shadow 0.15s}
+.seg-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.seg-pill{font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;text-transform:uppercase;letter-spacing:0.5px}
+.seg-ref{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.seg-title{font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px}
+.seg-route{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px;color:var(--sub)}
+.route-mid{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:60px}
+.route-dur{font-size:9px;color:var(--muted);font-weight:600}
+.route-line{height:1px;width:48px;background:var(--border)}
+.seg-loc{font-size:12px;color:var(--sub);margin-bottom:6px}
+.seg-bottom{display:flex;justify-content:space-between;align-items:center}
+.seg-time{font-size:12px;font-weight:600;color:var(--sub)}
+.seg-provider{font-size:11px;color:var(--muted)}
+.seg-notes{font-size:11px;color:var(--muted);margin-top:6px;font-style:italic;border-top:1px solid var(--border);padding-top:5px;line-height:1.5}
+.gap-indicator{display:flex;align-items:center;margin-left:19px;margin-bottom:6px}
+.gap-spine{width:2px;height:10px;background:#CBD5E1}
+.gap-pill{display:flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--border);border-radius:100px;padding:3px 10px;margin:0 8px;font-size:10px;color:var(--muted)}
+.reorder-hint{background:#EFF6FF;border-radius:10px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#1D4ED8}
+.reorder-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.reorder-arrows{display:flex;flex-direction:column;gap:4px}
+.reorder-btn{width:32px;height:32px;border:1px solid var(--border);background:#fff;border-radius:7px;cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all 0.12s}
+.reorder-btn:hover:not(:disabled){background:#EFF6FF;border-color:var(--primary)}
+.reorder-btn:disabled{opacity:0.25;cursor:not-allowed}
+.reorder-card{flex:1;background:var(--card);border-radius:10px;padding:12px 16px;border-left:4px solid transparent}
+.reorder-card-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px}
+.reorder-card-meta{font-size:12px;color:var(--muted)}
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:100;opacity:0;pointer-events:none;transition:opacity 0.2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:#fff;border-radius:16px;width:560px;max-width:90vw;max-height:85vh;display:flex;flex-direction:column;overflow:hidden;transform:translateY(8px);transition:transform 0.2s}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal-header{padding:20px 24px 0;display:flex;justify-content:space-between;align-items:center}
+.modal-title{font-family:var(--serif);font-size:20px;font-weight:600}
+.modal-close{background:none;border:none;font-size:22px;color:var(--muted);cursor:pointer;line-height:1}
+.modal-tabs{display:flex;padding:16px 24px 0;border-bottom:1px solid var(--border)}
+.modal-tab{padding:8px 16px;font-size:14px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--sans);transition:all 0.15s}
+.modal-tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+.modal-body{padding:20px 24px;overflow-y:auto;flex:1}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end}
+textarea{width:100%;min-height:200px;border:1.5px solid var(--border);border-radius:10px;padding:14px;font-size:14px;font-family:var(--sans);color:var(--text);resize:vertical;background:var(--bg)}
+textarea:focus{outline:none;border-color:var(--primary);background:#fff}
+.pdf-drop{border:2px dashed var(--border);border-radius:12px;padding:48px 24px;text-align:center;cursor:pointer;transition:all 0.15s;background:var(--bg)}
+.pdf-drop:hover,.pdf-drop.dragover{border-color:var(--primary);background:#EFF6FF}
+.pdf-drop-icon{font-size:36px;margin-bottom:12px}
+.pdf-drop-text{font-size:15px;font-weight:500;color:var(--sub);margin-bottom:4px}
+.pdf-drop-sub{font-size:12px;color:var(--muted)}
+#pdf-input{display:none}
+.pdf-selected{background:#F0FDF4;border:1px solid #86EFAC;border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:10px;margin-top:12px}
+.pdf-name{font-size:14px;font-weight:500;color:#166534;flex:1}
+.parsed-preview{margin-top:16px;display:flex;flex-direction:column;gap:8px}
+.parsed-seg{background:var(--bg);border-radius:8px;padding:10px 12px;border-left:3px solid var(--primary);font-size:13px}
+.parsed-seg-title{font-weight:600;color:var(--text);margin-bottom:2px}
+.parsed-seg-meta{color:var(--muted);font-size:11px}
+.trip-select{margin-top:16px}
+.trip-select-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.trip-option{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:8px;border:1.5px solid var(--border);margin-bottom:6px;cursor:pointer;transition:all 0.12s;font-size:14px;color:var(--sub)}
+.trip-option:hover,.trip-option.selected{border-color:var(--primary);background:#EFF6FF;color:var(--primary);font-weight:600}
+.btn-primary{background:var(--primary);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:600;font-family:var(--sans);cursor:pointer;transition:background 0.15s;display:flex;align-items:center;gap:6px}
+.btn-primary:hover{background:#1D4ED8}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed}
+.btn-secondary{background:none;border:1.5px solid var(--border);border-radius:8px;padding:10px 20px;font-size:14px;font-weight:500;font-family:var(--sans);color:var(--sub);cursor:pointer;transition:all 0.12s}
+.btn-secondary:hover{border-color:var(--sub);color:var(--text)}
+.info-box{background:#EFF6FF;border-radius:10px;padding:12px 14px;font-size:13px;color:#1D4ED8;line-height:1.6;margin-bottom:14px}
+.error-box{background:#FEF2F2;border-radius:10px;padding:12px 14px;font-size:13px;color:#DC2626;margin-bottom:14px}
+.loading{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:14px;padding:20px 0;justify-content:center}
+.spinner{width:18px;height:18px;border:2px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.seg-detail-panel{position:fixed;right:-440px;top:0;width:420px;height:100vh;background:#fff;border-left:1px solid var(--border);z-index:50;transition:right 0.25s ease;overflow-y:auto;display:flex;flex-direction:column}
+.seg-detail-panel.open{right:0}
+.detail-hero{padding:28px 24px 20px;text-align:center}
+.detail-hero-icon{font-size:40px;margin-bottom:10px}
+.detail-hero-type{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px}
+.detail-hero-title{font-family:var(--serif);font-size:20px;font-weight:600;margin-bottom:4px}
+.detail-hero-prov{font-size:13px;color:var(--muted)}
+.detail-section{padding:16px 24px;border-top:1px solid var(--border)}
+.detail-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.ref-row{display:flex;justify-content:space-between;align-items:center}
+.ref-val{font-family:var(--mono);font-size:22px;font-weight:400;letter-spacing:1px;color:var(--text)}
+.btn-copy{background:#EFF6FF;border:none;border-radius:100px;padding:6px 14px;font-size:12px;font-weight:600;color:var(--primary);cursor:pointer;font-family:var(--sans)}
+.btn-copy:hover{background:#DBEAFE}
+.time-block{display:flex;align-items:center;justify-content:space-around}
+.time-item{text-align:center}
+.time-sub{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px}
+.time-val{font-size:28px;font-weight:600;font-family:var(--serif);color:var(--text)}
+.time-date{font-size:11px;color:var(--muted);margin-top:2px}
+.time-divider{display:flex;flex-direction:column;align-items:center;gap:4px}
+.time-dur{font-size:10px;font-weight:600;color:var(--muted)}
+.time-line{width:40px;height:1px;background:var(--border)}
+.field-row{margin-bottom:12px}
+.field-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:2px}
+.field-val{font-size:14px;color:var(--text);font-weight:500}
+.detail-actions{padding:16px 24px 24px;display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--border)}
+.btn-edit{width:100%;border:1.5px solid var(--border);background:#fff;border-radius:10px;padding:12px;font-size:14px;font-weight:600;color:var(--text);cursor:pointer;font-family:var(--sans)}
+.btn-edit:hover{border-color:var(--primary);color:var(--primary)}
+.btn-remove{width:100%;border:1.5px solid #FECACA;background:#FFF5F5;border-radius:10px;padding:12px;font-size:14px;font-weight:600;color:#EF4444;cursor:pointer;font-family:var(--sans)}
+.btn-remove:hover{background:#FEE2E2}
+.detail-close{position:absolute;top:16px;left:16px;background:var(--bg);border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;color:var(--muted);display:flex;align-items:center;justify-content:center}
+.detail-close:hover{color:var(--text);background:var(--border)}
+.edit-form{padding:20px 24px}
+.edit-form-group{margin-bottom:14px}
+.edit-form-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;display:block}
+.edit-form-input{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;font-family:var(--sans);color:var(--text);background:#fff}
+.edit-form-input:focus{outline:none;border-color:var(--primary)}
+.edit-form-input.mono{font-family:var(--mono);font-size:13px}
+.edit-form-textarea{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;font-family:var(--sans);color:var(--text);background:#fff;min-height:80px;resize:vertical}
+.edit-form-textarea:focus{outline:none;border-color:var(--primary)}
+.rename-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:200}
+.rename-modal{background:#fff;border-radius:16px;padding:24px;width:400px}
+.rename-title{font-family:var(--serif);font-size:20px;font-weight:600;margin-bottom:16px}
+.rename-input{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:15px;font-family:var(--sans);color:var(--text);margin-bottom:16px}
+.rename-input:focus{outline:none;border-color:var(--primary)}
+.rename-actions{display:flex;gap:10px;justify-content:flex-end}
+
+.docs-section{margin-top:28px}
+.docs-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.docs-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px}
+.btn-add-doc{background:var(--primary);color:#fff;border:none;border-radius:100px;padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans)}
+.btn-add-doc:hover{background:#1D4ED8}
+.docs-empty{border:1.5px dashed var(--border);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:all 0.12s;color:var(--muted);font-size:13px;line-height:1.6}
+.docs-empty:hover{border-color:var(--primary);color:var(--primary)}
+.doc-row{display:flex;align-items:center;gap:12px;background:var(--card);border-radius:12px;padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:box-shadow 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.doc-row:hover{box-shadow:0 2px 12px rgba(0,0,0,0.1)}
+.doc-icon{width:40px;height:40px;border-radius:10px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.doc-name{font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px}
+.doc-meta{font-size:12px;color:var(--muted)}
+.doc-remove{background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;padding:4px}
+.doc-remove:hover{color:#EF4444}
+.expense-total{background:#F8FAFC;border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-top:12px}
+.expense-total-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.expense-total-amount{font-size:20px;font-weight:700;color:var(--text);margin-bottom:2px}
+/* Doc modal */
+.doc-modal{background:#fff;border-radius:16px;width:500px;max-width:90vw;padding:24px}
+.doc-type-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
+.doc-type-btn{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 6px;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;transition:all 0.12s;background:#fff;font-family:var(--sans)}
+.doc-type-btn:hover,.doc-type-btn.selected{border-color:var(--primary);background:#EFF6FF}
+.doc-type-emoji{font-size:20px}
+.doc-type-label{font-size:10px;font-weight:600;color:var(--muted)}
+.doc-type-btn.selected .doc-type-label{color:var(--primary)}
+.amount-row{display:flex;gap:8px;align-items:center}
+.amount-input{flex:1;border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:14px;font-family:var(--sans);color:var(--text)}
+.amount-input:focus{outline:none;border-color:var(--primary)}
+.currency-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.currency-btn{padding:5px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;background:#fff;font-family:var(--sans);color:var(--muted)}
+.currency-btn:hover,.currency-btn.selected{border-color:var(--primary);background:#EFF6FF;color:var(--primary)}
+.form-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:6px;display:block}
+.form-input{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:14px;font-family:var(--sans);color:var(--text);background:#fff;margin-bottom:14px}
+.form-input:focus{outline:none;border-color:var(--primary)}
+
+.cal-panel{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:#fff;border-bottom:1px solid var(--border);flex-shrink:0}
+.cal-nav-btn{width:36px;height:36px;border:1px solid var(--border);background:#fff;border-radius:8px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all 0.12s}
+.cal-nav-btn:hover{background:#EFF6FF;border-color:var(--primary)}
+.cal-month-title{font-family:var(--serif);font-size:20px;font-weight:600;color:var(--text)}
+.cal-body{flex:1;overflow-y:auto;padding:16px 32px 48px}
+.cal-day-headers{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:4px}
+.cal-day-hdr{text-align:center;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;padding:4px 0}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cal-cell{min-height:90px;padding:6px;border:1px solid var(--border);border-radius:6px;background:#fff;vertical-align:top}
+.cal-cell.weekend{background:#FAFAFA}
+.cal-cell.empty{background:transparent;border:none}
+.cal-cell.today{border-color:var(--primary);border-width:2px}
+.cal-day-num{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;color:var(--text);margin-bottom:4px}
+.cal-day-num.today{background:var(--primary);color:#fff;font-weight:700}
+.cal-seg-dot{display:flex;align-items:center;gap:4px;padding:2px 5px;border-radius:4px;margin-bottom:2px;cursor:pointer;transition:opacity 0.12s;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden}
+.cal-seg-dot:hover{opacity:0.8}
+.cal-more{font-size:10px;color:var(--muted);padding:1px 4px}
+.cal-trips-list{margin-top:20px}
+.cal-trips-label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:10px}
+.cal-trip-row{display:flex;align-items:center;gap:12px;background:#fff;border-radius:12px;padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:box-shadow 0.15s;box-shadow:0 1px 4px rgba(0,0,0,0.06)}
+.cal-trip-row:hover{box-shadow:0 2px 12px rgba(0,0,0,0.1)}
+.cal-trip-bar{width:4px;min-height:40px;border-radius:2px;flex-shrink:0}
+.cal-trip-name{font-size:15px;font-weight:700;color:var(--text);margin-bottom:2px}
+.cal-trip-dates{font-size:12px;color:var(--muted);margin-bottom:4px}
+.cal-trip-summary{font-size:13px;color:var(--sub)}
+.stats-bar{display:none;background:#fff;border-bottom:1px solid var(--border);padding:10px 32px;flex-shrink:0}
+.stats-bar.visible{display:flex;gap:0}
+.stat-item{flex:1;text-align:center;padding:6px 8px;border-right:1px solid var(--border)}
+.stat-item:last-child{border-right:none}
+.stat-val{font-size:18px;font-weight:700;color:var(--text);display:block;margin-bottom:2px}
+.stat-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px}
+</style>
+</head>
+<body>
+<aside class="sidebar">
+  <div class="sidebar-header"><div class="logo">Way<span>point</span></div><div class="logo-sub">Travel Manager</div></div>
+  <div class="sidebar-actions"><button class="btn-import" onclick="openImport()">+ Import Booking</button><button class="btn-import" style="flex:0;padding:9px 12px;background:#1E293B" onclick="showCalendar()" title="Calendar">📅</button></div>
+  <div class="sidebar-search"><input type="text" id="searchInput" placeholder="Search trips, refs, destinations…" oninput="handleSearch(this.value)"></div>
+  <div class="trip-list" id="tripList"><div class="loading"><div class="spinner"></div> Loading…</div></div>
+</aside>
+<main class="main">
+  <div class="main-header" id="mainHeader" style="display:none">
+    <div class="trip-title" id="tripTitleEl" onclick="openRename()"><span id="tripTitle">—</span><span class="edit-hint">✏</span></div>
+    <div class="trip-dates" id="tripDates"></div>
+    <button class="btn-reorder" id="reorderBtn" onclick="toggleReorder()">⇅ Reorder</button>
+    <button class="btn-add-seg" onclick="openImport(true)">+ Add booking</button>
+    <button class="btn-delete-trip" onclick="deleteCurrentTrip()">🗑</button>
+  </div>
+  <div class="stats-bar" id="statsBar"></div>
+  <div class="main-body" id="mainBody"></div>
+</main>
+<div id="calPanel" style="display:none;flex:1;flex-direction:column;overflow:hidden" class="cal-panel">
+  <div class="cal-nav">
+    <button class="cal-nav-btn" onclick="calPrevMonth()">‹</button>
+    <div class="cal-month-title" id="calMonthTitle"></div>
+    <button class="cal-nav-btn" onclick="calNextMonth()">›</button>
+  </div>
+  <div class="cal-body">
+    <div class="cal-day-headers">
+      <div class="cal-day-hdr">Mon</div><div class="cal-day-hdr">Tue</div><div class="cal-day-hdr">Wed</div>
+      <div class="cal-day-hdr">Thu</div><div class="cal-day-hdr">Fri</div><div class="cal-day-hdr">Sat</div><div class="cal-day-hdr">Sun</div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-trips-list" id="calTripsList"></div>
+  </div>
+</div>
+<div class="modal-overlay" id="docModal">
+  <div class="doc-modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div style="font-family:var(--serif);font-size:20px;font-weight:600">Add Document</div>
+      <button class="modal-close" onclick="closeDocModal()">×</button>
+    </div>
+    <label class="form-label">Name</label>
+    <input type="text" class="form-input" id="docNameInput" placeholder="e.g. UK Visa, Travel Insurance">
+    <label class="form-label">Type</label>
+    <div class="doc-type-grid" id="docTypeGrid"></div>
+    <label class="form-label">Amount (optional)</label>
+    <div class="amount-row">
+      <input type="number" class="amount-input" id="docAmountInput" placeholder="0.00" step="0.01">
+    </div>
+    <div class="currency-row" id="currencyRow"></div>
+    <div style="margin-top:8px"></div>
+    <label class="form-label">File</label>
+    <div id="docFileArea" style="border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;margin-bottom:16px;font-size:13px;color:var(--muted)" onclick="document.getElementById('docFileInput').click()" ondragover="event.preventDefault();this.style.borderColor='var(--primary)'" ondragleave="this.style.borderColor='var(--border)'" ondrop="handleDocDrop(event)">
+      Drop a file here or click to browse
+    </div>
+    <input type="file" id="docFileInput" accept=".pdf,image/*" style="display:none" onchange="handleDocFileSelect(event)">
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn-secondary" onclick="closeDocModal()">Cancel</button>
+      <button class="btn-primary" onclick="saveDoc()">Save Document</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="importModal">
+  <div class="modal">
+    <div class="modal-header"><div class="modal-title" id="modalTitle">Import Booking</div><button class="modal-close" onclick="closeImport()">×</button></div>
+    <div class="modal-tabs" id="modalTabs"><button class="modal-tab active" onclick="switchTab('text')">Paste Text</button><button class="modal-tab" onclick="switchTab('pdf')">Upload PDF</button></div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+<div class="seg-detail-panel" id="segPanel"><button class="detail-close" onclick="closeSegPanel()">←</button><div id="segPanelContent"></div></div>
+<div id="renameOverlay" style="display:none" class="rename-overlay">
+  <div class="rename-modal"><div class="rename-title">Rename Trip</div><input type="text" class="rename-input" id="renameInput" placeholder="Trip name"><div class="rename-actions"><button class="btn-secondary" onclick="closeRename()">Cancel</button><button class="btn-primary" onclick="saveRename()">Save</button></div></div>
+</div>
+<script>
+const SERVER='https://waypoint-server-production.up.railway.app';
+const TYPES={flight:{label:'Flight',color:'#2563EB',bg:'#EFF6FF',emoji:'✈'},train:{label:'Train',color:'#16A34A',bg:'#F0FDF4',emoji:'🚄'},hotel:{label:'Hotel',color:'#7C3AED',bg:'#F5F3FF',emoji:'🏨'},car_hire:{label:'Car Hire',color:'#EA580C',bg:'#FFF7ED',emoji:'🚗'},ferry:{label:'Ferry',color:'#0891B2',bg:'#ECFEFF',emoji:'⛴'},taxi:{label:'Transfer',color:'#CA8A04',bg:'#FEFCE8',emoji:'🚕'},meeting:{label:'Meeting',color:'#DC2626',bg:'#FEF2F2',emoji:'👥'},activity:{label:'Activity',color:'#0D9488',bg:'#F0FDFA',emoji:'⭐'},bus:{label:'Bus',color:'#6D28D9',bg:'#EDE9FE',emoji:'🚌'}};
+function tc(type){return TYPES[type]||{label:type||'Booking',color:'#64748B',bg:'#F8FAFC',emoji:'📋'}}
+let trips=[],currentTrip=null,importMode='text',parsedResult=null,selectedTripId=null,reorderMode=false;
+
+async function api(path,opts={}){const r=await fetch(SERVER+path,{headers:{'Content-Type':'application/json'},...opts});if(!r.ok)throw new Error(`Server error ${r.status}`);return r.json()}
+
+function getTripSummary(trip){
+  const segs=trip.segments||[];
+  const dates=segs.flatMap(s=>[s.startDateTime,s.endDateTime]).filter(Boolean);
+  const min=dates.length?new Date(Math.min(...dates.map(d=>new Date(d)))):null;
+  const max=dates.length?new Date(Math.max(...dates.map(d=>new Date(d)))):null;
+  const totalDays=min&&max?Math.ceil((max-min)/(1000*60*60*24)):0;
+  const hotels=segs.filter(s=>s.type==='hotel');
+  let nights=0;hotels.forEach(h=>{if(h.startDateTime&&h.endDateTime){const n=Math.round((new Date(h.endDateTime)-new Date(h.startDateTime))/(1000*60*60*24));if(n>0)nights+=n}});
+  const flights=segs.filter(s=>s.type==='flight');
+  let flightMins=0;flights.forEach(f=>{if(f.startDateTime&&f.endDateTime)flightMins+=Math.round((new Date(f.endDateTime)-new Date(f.startDateTime))/60000)});
+  const fh=Math.floor(flightMins/60),fm=flightMins%60;
+  const flightTime=flightMins>0?(fm>0?fh+'h '+fm+'m':fh+'h'):null;
+  const trains=segs.filter(s=>s.type==='train').length;
+  const cities=new Set();segs.forEach(s=>{if(s.toLocation)cities.add(s.toLocation.split('(')[0].trim().split(',')[0].trim());if(s.location&&s.type!=='flight')cities.add(s.location.split(',')[0].trim())});
+  return{totalDays,nights,flights:flights.length,flightTime,trains,cities:[...cities]};
+}
+
+
+// ── Calendar ──────────────────────────────────────────────────────────────────
+let calYear=new Date().getFullYear(), calMonth=new Date().getMonth();
+const TCOLORS={flight:'#2563EB',hotel:'#7C3AED',train:'#16A34A',car_hire:'#EA580C',ferry:'#0891B2',taxi:'#CA8A04',meeting:'#DC2626',activity:'#0D9488',bus:'#6D28D9'};
+const TEMOJI={flight:'✈',hotel:'🏨',train:'🚄',car_hire:'🚗',ferry:'⛴',taxi:'🚕',meeting:'👥',activity:'⭐',bus:'🚌'};
+
+function showCalendar(){
+  currentTrip=null;
+  document.getElementById('mainHeader').style.display='none';
+  document.getElementById('statsBar').className='stats-bar';
+  document.querySelector('.main').style.display='none';
+  document.getElementById('calPanel').style.display='flex';
+  renderCalendar();
+}
+function hideCalendar(){
+  document.getElementById('calPanel').style.display='none';
+  document.querySelector('.main').style.display='flex';
+  renderDashboard();
+}
+function calPrevMonth(){if(calMonth===0){calMonth=11;calYear--;}else calMonth--;renderCalendar();}
+function calNextMonth(){if(calMonth===11){calMonth=0;calYear++;}else calMonth++;renderCalendar();}
+
+function getDaysInMonth(y,m){return new Date(y,m+1,0).getDate();}
+function getSegsForDay(dateStr){
+  const r=[];trips.forEach(trip=>{(trip.segments||[]).forEach(seg=>{
+    if(!seg.startDateTime)return;
+    const sd=seg.startDateTime.split('T')[0],ed=seg.endDateTime?seg.endDateTime.split('T')[0]:sd;
+    if(dateStr>=sd&&dateStr<=ed)r.push({seg,trip});
+  })});return r;
+}
+
+function renderCalendar(){
+  const now=new Date();
+  const todayStr=now.toISOString().split('T')[0];
+  const daysInMonth=getDaysInMonth(calYear,calMonth);
+  const firstDow=new Date(calYear,calMonth,1).getDay();
+  const adjustedFirst=firstDow===0?6:firstDow-1;
+  document.getElementById('calMonthTitle').textContent=new Date(calYear,calMonth).toLocaleDateString('en-GB',{month:'long',year:'numeric'});
+  
+  // Grid
+  let html='';
+  for(let i=0;i<adjustedFirst;i++) html+='<div class="cal-cell empty"></div>';
+  for(let d=1;d<=daysInMonth;d++){
+    const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const segs=getSegsForDay(dateStr);
+    const isToday=dateStr===todayStr;
+    const dow=(adjustedFirst+d-1)%7;
+    const isWeekend=dow>=5;
+    html+=`<div class="cal-cell${isWeekend?' weekend':''}${isToday?' today':''}">`;
+    html+=`<div class="cal-day-num${isToday?' today':''}">${d}</div>`;
+    segs.slice(0,3).forEach(({seg,trip})=>{
+      const color=TCOLORS[seg.type]||'#64748B';
+      const emoji=TEMOJI[seg.type]||'📋';
+      html+=`<div class="cal-seg-dot" style="background:${color}18;color:${color}" onclick="showTrip(trips.find(x=>x.id==='${trip.id}'));setTimeout(()=>openSegPanel('${seg.id}'),200);hideCalendar()">${emoji} ${seg.title.length>10?seg.title.slice(0,10)+'…':seg.title}</div>`;
+    });
+    if(segs.length>3) html+=`<div class="cal-more">+${segs.length-3} more</div>`;
+    html+='</div>';
+  }
+  document.getElementById('calGrid').innerHTML=html;
+
+  // Trips this month
+  const firstDay=`${calYear}-${String(calMonth+1).padStart(2,'0')}-01`;
+  const lastDay=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(daysInMonth).padStart(2,'0')}`;
+  const monthTrips=trips.filter(trip=>{
+    const segs=trip.segments||[];if(!segs.length)return false;
+    const dates=segs.flatMap(s=>[s.startDateTime,s.endDateTime]).filter(Boolean);
+    const min=dates.reduce((a,b)=>a<b?a:b,dates[0]);
+    const max=dates.reduce((a,b)=>a>b?a:b,dates[0]);
+    return min<=lastDay&&max>=firstDay;
+  });
+  
+  const statusColors={active:'#16A34A',upcoming:'#2563EB',past:'#94A3B8',draft:'#CA8A04'};
+  let thtml='';
+  if(monthTrips.length>0){
+    thtml+='<div class="cal-trips-label">Trips this month</div>';
+    monthTrips.forEach(trip=>{
+      const segs=trip.segments||[];
+      const dates=segs.flatMap(s=>[s.startDateTime,s.endDateTime]).filter(Boolean);
+      const min=dates.reduce((a,b)=>a<b?a:b,dates[0]);
+      const max=dates.reduce((a,b)=>a>b?a:b,dates[0]);
+      const startFmt=min?new Date(min).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';
+      const endFmt=max?new Date(max).toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';
+      const typeCounts=segs.reduce((a,s)=>{a[s.type]=(a[s.type]||0)+1;return a},{});
+      const summary=Object.entries(typeCounts).map(([t,n])=>`${TEMOJI[t]||'📋'} ${n}`).join('  ');
+      const status=getStatus(trip);
+      thtml+=`<div class="cal-trip-row" onclick="showTrip(trips.find(x=>x.id==='${trip.id}'));hideCalendar()">
+        <div class="cal-trip-bar" style="background:${statusColors[status]||'#CBD5E1'}"></div>
+        <div style="flex:1"><div class="cal-trip-name">${trip.name}</div><div class="cal-trip-dates">${startFmt}${endFmt&&endFmt!==startFmt?' – '+endFmt:''}</div><div class="cal-trip-summary">${summary}</div></div>
+        <div style="color:var(--muted);font-size:18px">›</div>
+      </div>`;
+    });
+  }
+  document.getElementById('calTripsList').innerHTML=thtml;
+}
+
+
+// ── Documents ─────────────────────────────────────────────────────────────────
+const DOC_TYPES = [
+  {key:'visa',label:'Visa',emoji:'🛂'},
+  {key:'insurance',label:'Insurance',emoji:'🛡'},
+  {key:'reservation',label:'Reservation',emoji:'📋'},
+  {key:'itinerary',label:'Itinerary',emoji:'🗺'},
+  {key:'ticket',label:'Ticket',emoji:'🎫'},
+  {key:'receipt',label:'Receipt',emoji:'🧾'},
+  {key:'other',label:'Other',emoji:'📄'},
+];
+const CURRENCIES = ['GBP','USD','EUR','AED','EGP','SEK','NOK','CHF','JPY','AUD','CAD'];
+let selectedDocType='receipt', selectedCurrency='GBP', pendingDocFile=null, pendingDocBase64=null;
+
+function openDocModal(){
+  selectedDocType='receipt'; selectedCurrency='GBP'; pendingDocFile=null; pendingDocBase64=null;
+  document.getElementById('docNameInput').value='';
+  document.getElementById('docAmountInput').value='';
+  document.getElementById('docFileArea').textContent='Drop a file here or click to browse';
+  document.getElementById('docFileArea').style.borderColor='var(--border)';
+  // Render type grid
+  document.getElementById('docTypeGrid').innerHTML=DOC_TYPES.map(t=>
+    `<button class="doc-type-btn${t.key===selectedDocType?' selected':''}" onclick="selectDocType('${t.key}')"><span class="doc-type-emoji">${t.emoji}</span><span class="doc-type-label">${t.label}</span></button>`
+  ).join('');
+  // Render currencies
+  document.getElementById('currencyRow').innerHTML=CURRENCIES.map(c=>
+    `<button class="currency-btn${c===selectedCurrency?' selected':''}" onclick="selectCurrency('${c}')">${c}</button>`
+  ).join('');
+  document.getElementById('docModal').classList.add('open');
+}
+function closeDocModal(){document.getElementById('docModal').classList.remove('open')}
+function selectDocType(key){
+  selectedDocType=key;
+  document.querySelectorAll('.doc-type-btn').forEach(b=>b.classList.toggle('selected',b.onclick.toString().includes(`'${key}'`)));
+  document.getElementById('docTypeGrid').innerHTML=DOC_TYPES.map(t=>
+    `<button class="doc-type-btn${t.key===key?' selected':''}" onclick="selectDocType('${t.key}')"><span class="doc-type-emoji">${t.emoji}</span><span class="doc-type-label">${t.label}</span></button>`
+  ).join('');
+}
+function selectCurrency(c){
+  selectedCurrency=c;
+  document.getElementById('currencyRow').innerHTML=CURRENCIES.map(cur=>
+    `<button class="currency-btn${cur===c?' selected':''}" onclick="selectCurrency('${cur}')">${cur}</button>`
+  ).join('');
+}
+function handleDocFileSelect(e){const f=e.target.files[0];if(f)processDocFile(f)}
+function handleDocDrop(e){e.preventDefault();document.getElementById('docFileArea').style.borderColor='var(--border)';const f=e.dataTransfer.files[0];if(f)processDocFile(f)}
+function processDocFile(file){
+  pendingDocFile=file;
+  document.getElementById('docFileArea').textContent=`📄 ${file.name} (${(file.size/1024).toFixed(0)} KB)`;
+  document.getElementById('docFileArea').style.borderColor='#86EFAC';
+  if(!document.getElementById('docNameInput').value) document.getElementById('docNameInput').value=file.name.replace(/\.[^.]+$/,'');
+  const r=new FileReader();r.onload=e=>{pendingDocBase64=e.target.result};r.readAsDataURL(file);
+}
+async function saveDoc(){
+  if(!currentTrip||!pendingDocBase64){alert('Please select a file.');return}
+  const name=document.getElementById('docNameInput').value.trim()||pendingDocFile?.name||'Document';
+  const amount=parseFloat(document.getElementById('docAmountInput').value)||null;
+  const doc={
+    id:`doc-${Date.now()}-${Math.random().toString(36).substr(2,6)}`,
+    type:selectedDocType,name,
+    filename:pendingDocFile?.name||'document',
+    base64:pendingDocBase64,
+    addedAt:new Date().toISOString(),
+    amount:amount,
+    currency:amount?selectedCurrency:null,
+  };
+  const docs=[...(currentTrip.documents||[]),doc];
+  try{
+    await api(`/trips/${currentTrip.id}`,{method:'PUT',body:JSON.stringify({...currentTrip,documents:docs})});
+    closeDocModal();await loadTrips();const r=trips.find(t=>t.id===currentTrip.id);if(r)showTrip(r);
+  }catch(e){alert('Failed to save document.')}
+}
+async function removeDoc(docId){
+  if(!currentTrip||!confirm('Remove this document?'))return;
+  const docs=(currentTrip.documents||[]).filter(d=>d.id!==docId);
+  try{
+    await api(`/trips/${currentTrip.id}`,{method:'PUT',body:JSON.stringify({...currentTrip,documents:docs})});
+    await loadTrips();const r=trips.find(t=>t.id===currentTrip.id);if(r)showTrip(r);
+  }catch(e){alert('Failed to remove.')}
+}
+function openDoc(doc){
+  if(!doc.base64){alert('No file data available.');return}
+  const a=document.createElement('a');a.href=doc.base64;a.download=doc.filename||doc.name;a.click();
+}
+function renderDocs(trip){
+  const docs=trip.documents||[];
+  const dt=type=>DOC_TYPES.find(d=>d.key===type)||DOC_TYPES[6];
+  let html=`<div class="docs-section"><div class="docs-header"><div class="docs-title">Documents</div><button class="btn-add-doc" onclick="openDocModal()">+ Add</button></div>`;
+  if(!docs.length){
+    html+=`<div class="docs-empty" onclick="openDocModal()">Add visas, insurance, receipts and other documents</div>`;
+  } else {
+    docs.forEach(doc=>{
+      const t=dt(doc.type);
+      html+=`<div class="doc-row" onclick="openDoc(this._doc)" id="docrow-${doc.id}"><div class="doc-icon">${t.emoji}</div><div style="flex:1"><div class="doc-name">${doc.name}</div><div class="doc-meta">${t.label}${doc.amount?` · ${doc.currency} ${doc.amount.toFixed(2)}`:''}</div></div><button class="doc-remove" onclick="event.stopPropagation();removeDoc('${doc.id}')">✕</button></div>`;
+    });
+    // Expense totals
+    const withAmounts=docs.filter(d=>d.amount);
+    if(withAmounts.length){
+      const byCur={};withAmounts.forEach(d=>{byCur[d.currency]=(byCur[d.currency]||0)+d.amount});
+      html+=`<div class="expense-total"><div class="expense-total-label">Total Expenses</div>${Object.entries(byCur).map(([c,a])=>`<div class="expense-total-amount">${c} ${a.toFixed(2)}</div>`).join('')}</div>`;
+    }
+  }
+  html+='</div>';
+  // Attach doc objects for click handlers
+  setTimeout(()=>{docs.forEach(doc=>{const el=document.getElementById('docrow-'+doc.id);if(el)el._doc=doc})},0);
+  return html;
+}
+document.getElementById('docModal').addEventListener('click',e=>{if(e.target===document.getElementById('docModal'))closeDocModal()});
+
+async function loadTrips(){
+  try{
+    trips=await api('/trips');
+    renderSidebar();
+    if(currentTrip){const u=trips.find(t=>t.id===currentTrip.id);if(u)showTrip(u);}
+    else renderDashboard();
+  }catch(e){document.getElementById('tripList').innerHTML='<div style="padding:16px;color:#EF4444;font-size:12px;">Cannot connect to server</div>'}
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+function fmtUntil(iso){
+  const now=new Date(),then=new Date(iso),d=then-now;
+  if(d<0)return null;
+  const h=Math.floor(d/3600000),m=Math.round((d%3600000)/60000);
+  if(h===0)return`in ${m}m`;
+  if(h<24)return`in ${h}h ${m}m`;
+  const days=Math.floor(h/24);return`in ${days} day${days!==1?'s':''}`;
+}
+function getTodaySegs(){
+  const today=new Date().toISOString().split('T')[0];
+  const r=[];trips.forEach(trip=>{(trip.segments||[]).forEach(seg=>{if(seg.startDateTime?.startsWith(today))r.push({seg,trip})})});
+  return r;
+}
+function getNextSeg(){
+  const now=new Date();let next=null,nextTrip=null;
+  trips.forEach(trip=>{(trip.segments||[]).forEach(seg=>{if(!seg.startDateTime)return;const s=new Date(seg.startDateTime);if(s>now&&(!next||s<new Date(next.startDateTime))){next=seg;nextTrip=trip}})});
+  return{seg:next,trip:nextTrip};
+}
+function renderDashboard(){
+  const now=new Date();
+  const greeting=now.getHours()<12?'Good morning':now.getHours()<17?'Good afternoon':'Good evening';
+  const dateStr=now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  const todaySegs=getTodaySegs();
+  const{seg:nextSeg,trip:nextTrip}=getNextSeg();
+  let html=`<div class="dashboard"><div class="dashboard-greeting">${greeting}</div><div class="dashboard-date">${dateStr}</div>`;
+  if(todaySegs.length>0){
+    html+='<div class="today-card"><div class="today-card-header">📅 Today</div>';
+    todaySegs.forEach(({seg,trip})=>{
+      const t=tc(seg.type);const until=fmtUntil(seg.startDateTime);
+      html+=`<div class="today-seg"><div class="today-dot" style="background:${t.color}" onclick="showTrip(trips.find(x=>x.id==='${trip.id}'));setTimeout(()=>openSegPanel('${seg.id}'),200)">${t.emoji}</div><div style="flex:1"><div class="today-seg-title">${seg.title}</div><div class="today-seg-meta">${fmtTime(seg.startDateTime)}${seg.endDateTime?' – '+fmtTime(seg.endDateTime):''}${seg.confirmationRef?' · '+seg.confirmationRef:''}${seg.provider?' · '+seg.provider:''}</div></div>${until?`<div class="countdown-badge" style="background:${t.color}22;color:${t.color}">${until}</div>`:''}</div>`;
+    });
+    html+='</div>';
+  } else if(nextSeg&&nextTrip){
+    const t=tc(nextSeg.type);const until=fmtUntil(nextSeg.startDateTime);
+    html+=`<div class="next-card" onclick="showTrip(trips.find(x=>x.id==='${nextTrip.id}'));setTimeout(()=>openSegPanel('${nextSeg.id}'),200)"><div class="next-card-label">Next Booking <span class="next-card-countdown">${until||''}</span></div><div class="next-card-body"><div class="next-card-emoji">${t.emoji}</div><div><div class="next-card-title">${nextSeg.title}</div><div class="next-card-meta">${fmtTime(nextSeg.startDateTime)} · ${nextTrip.name}</div>${nextSeg.confirmationRef?`<div class="next-card-ref">${nextSeg.confirmationRef}</div>`:''}</div></div></div>`;
+  } else if(!trips.length){
+    html+='<div class="no-trips"><div class="no-trips-icon">🗺</div><div class="no-trips-title">No trips yet</div><div class="no-trips-sub">Click "+ Import Booking" to add your first trip</div></div>';
+  }
+  html+='</div>';
+  document.getElementById('mainBody').innerHTML=html;
+}
+
+// ── Search ────────────────────────────────────────────────────────────────────
+function handleSearch(q){
+  if(!q.trim()){renderSidebar();return}
+  q=q.toLowerCase();const list=document.getElementById('tripList');let html='';
+  const mt=trips.filter(t=>t.name?.toLowerCase().includes(q)||getCities(t).some(c=>c.toLowerCase().includes(q)));
+  const ms=[];trips.forEach(trip=>{(trip.segments||[]).forEach(seg=>{const m=seg.title?.toLowerCase().includes(q)||seg.confirmationRef?.toLowerCase().includes(q)||seg.provider?.toLowerCase().includes(q)||seg.fromLocation?.toLowerCase().includes(q)||seg.toLocation?.toLowerCase().includes(q)||seg.location?.toLowerCase().includes(q)||seg.notes?.toLowerCase().includes(q);if(m&&!mt.find(t=>t.id===trip.id))ms.push({trip,seg})})});
+  if(!mt.length&&!ms.length){list.innerHTML='<div style="padding:16px;color:#475569;font-size:13px;">No results found</div>';return}
+  if(mt.length){html+='<div class="section-label">Trips</div>';mt.forEach(t=>{const a=currentTrip?.id===t.id?'active':'';html+=`<div class="trip-item ${a}" onclick="showTrip(trips.find(x=>x.id==='${t.id}'))"><div class="trip-item-name">${t.name}</div><div class="trip-item-meta">${getCities(t).slice(0,3).join(' → ')}</div></div>`})}
+  if(ms.length){html+='<div class="section-label">Bookings</div>';ms.forEach(({trip,seg})=>{const t=tc(seg.type);html+=`<div class="seg-result" onclick="showTrip(trips.find(x=>x.id==='${trip.id}'));setTimeout(()=>openSegPanel('${seg.id}'),300)"><div style="font-size:16px">${t.emoji}</div><div><div class="seg-result-title">${seg.title}</div><div class="seg-result-meta">${trip.name}${seg.confirmationRef?' · '+seg.confirmationRef:''}</div></div></div>`})}
+  list.innerHTML=html;
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
+function renderSidebar(){
+  const list=document.getElementById('tripList');
+  if(!trips.length){list.innerHTML='<div style="padding:20px 8px;color:#334155;font-size:13px;line-height:1.6;">No trips yet.<br>Import a booking to start.</div>';return}
+  const active=trips.filter(t=>getStatus(t)==='active'),upcoming=trips.filter(t=>getStatus(t)==='upcoming'),past=[...trips].filter(t=>getStatus(t)==='past').reverse();
+  let html='';
+  const section=(label,items)=>{if(!items.length)return;html+=`<div class="section-label">${label}</div>`;items.forEach(t=>{const cities=getCities(t).slice(0,3).join(' → ');const a=currentTrip?.id===t.id?'active':'';html+=`<div class="trip-item ${a}" onclick="showTrip(trips.find(x=>x.id==='${t.id}'))"><div class="trip-status status-${getStatus(t)}">${getStatus(t)}</div><div class="trip-item-name">${t.name}</div><div class="trip-item-meta">${cities}</div></div>`})};
+  section('In Progress',active);section('Upcoming',upcoming);section('Past',past);list.innerHTML=html;
+}
+
+// ── Rename ────────────────────────────────────────────────────────────────────
+function openRename(){if(!currentTrip)return;document.getElementById('renameInput').value=currentTrip.name;document.getElementById('renameOverlay').style.display='flex';setTimeout(()=>document.getElementById('renameInput').focus(),50)}
+function closeRename(){document.getElementById('renameOverlay').style.display='none'}
+async function saveRename(){const name=document.getElementById('renameInput').value.trim();if(!name||!currentTrip)return;try{await api(`/trips/${currentTrip.id}`,{method:'PUT',body:JSON.stringify({...currentTrip,name})});closeRename();await loadTrips();const r=trips.find(t=>t.id===currentTrip.id);if(r)showTrip(r)}catch(e){alert('Failed to rename.')}}
+document.getElementById('renameInput').addEventListener('keydown',e=>{if(e.key==='Enter')saveRename();if(e.key==='Escape')closeRename()});
+document.getElementById('renameOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('renameOverlay'))closeRename()});
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function getStatus(trip){const segs=trip.segments||[];if(!segs.length)return'draft';const dates=segs.flatMap(s=>[s.startDateTime,s.endDateTime]).filter(Boolean).map(d=>new Date(d));const min=new Date(Math.min(...dates)),max=new Date(Math.max(...dates)),now=new Date();if(max<now)return'past';if(min<=now&&max>=now)return'active';return'upcoming'}
+function getCities(trip){const cities=new Set();(trip.segments||[]).forEach(s=>{if(s.toLocation)cities.add(s.toLocation.split('(')[0].trim().split(',')[0].trim());else if(s.location)cities.add(s.location.split(',')[0].trim())});return[...cities]}
+function fmtTime(iso){if(!iso)return'—';return new Date(iso).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false})}
+function fmtDay(iso){if(!iso)return'';return new Date(iso.includes('T')?iso:iso+'T12:00:00').toLocaleDateString('en-GB',{weekday:'short',day:'numeric',month:'short'})}
+function fmtDateRange(trip){const segs=trip.segments||[];if(!segs.length)return'';const dates=segs.flatMap(s=>[s.startDateTime,s.endDateTime]).filter(Boolean).map(d=>new Date(d));const min=new Date(Math.min(...dates)),max=new Date(Math.max(...dates));return`${min.toLocaleDateString('en-GB',{day:'numeric',month:'short'})} – ${max.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}`}
+function fmtDuration(s,e){if(!s||!e)return null;const d=new Date(e)-new Date(s);if(d<=0)return null;const h=Math.floor(d/3600000),m=Math.round((d%3600000)/60000);return h===0?`${m}m`:m===0?`${h}h`:`${h}h ${m}m`}
+function groupByDay(segments){const map={},keys=[];segments.forEach(s=>{const day=s.startDateTime?.split('T')[0]||'undated';if(!map[day]){map[day]=[];keys.push(day)}map[day].push(s)});return keys.map(k=>[k,map[k]])}
+
+// ── Reorder ───────────────────────────────────────────────────────────────────
+function toggleReorder(){
+  reorderMode=!reorderMode;
+  const btn=document.getElementById('reorderBtn');
+  btn.textContent=reorderMode?'✓ Done':'⇅ Reorder';
+  btn.classList.toggle('active',reorderMode);
+  if(currentTrip)renderTripBody(currentTrip);
+}
+async function moveSegment(segId,direction){
+  if(!currentTrip)return;
+  const segs=[...(currentTrip.segments||[])];
+  const idx=segs.findIndex(s=>s.id===segId);
+  if(idx===-1)return;
+  const newIdx=idx+direction;
+  if(newIdx<0||newIdx>=segs.length)return;
+  const temp=segs[idx];segs[idx]=segs[newIdx];segs[newIdx]=temp;
+  try{await api(`/trips/${currentTrip.id}`,{method:'PUT',body:JSON.stringify({...currentTrip,segments:segs})});currentTrip={...currentTrip,segments:segs};trips=trips.map(t=>t.id===currentTrip.id?currentTrip:t);renderTripBody(currentTrip)}catch(e){alert('Failed to save order.')}
+}
+
+// ── Trip view ─────────────────────────────────────────────────────────────────
+function renderTripBody(trip){
+  const segs=trip.segments||[];
+  if(!segs.length){document.getElementById('mainBody').innerHTML='<div class="trip-body"><div style="text-align:center;padding:48px;color:var(--muted)">No bookings yet</div></div>';return}
+  if(reorderMode){
+    let html='<div class="trip-body"><div class="reorder-hint">Use ▲▼ arrows to reorder. Changes save instantly.</div>';
+    segs.forEach((seg,idx)=>{
+      const t=tc(seg.type);
+      html+=`<div class="reorder-row"><div class="reorder-arrows"><button class="reorder-btn" onclick="moveSegment('${seg.id}',-1)" ${idx===0?'disabled':''}>▲</button><button class="reorder-btn" onclick="moveSegment('${seg.id}',1)" ${idx===segs.length-1?'disabled':''}>▼</button></div><div class="reorder-card" style="border-left-color:${t.color}"><div style="display:flex;align-items:center;gap:6px;margin-bottom:4px"><span>${t.emoji}</span><span style="font-size:10px;font-weight:700;background:${t.bg};color:${t.color};padding:2px 8px;border-radius:100px;text-transform:uppercase">${t.label}</span></div><div class="reorder-card-title">${seg.title}</div><div class="reorder-card-meta">${fmtTime(seg.startDateTime)}${seg.provider?' · '+seg.provider:''}</div></div></div>`;
+    });
+    html+=renderDocs(trip);
+  document.getElementById('mainBody').innerHTML=html+'</div>';return;
+  }
+  const days=groupByDay(segs);let html='<div class="trip-body">';
+  days.forEach(([dateKey,daySegs],di)=>{
+    html+=`<div class="day-header"><div class="day-line"></div><div class="day-label">${dateKey==='undated'?'No date':fmtDay(dateKey+'T12:00:00')}</div><div class="day-line"></div></div>`;
+    daySegs.forEach((seg,si)=>{
+      const t=tc(seg.type),isFirst=si===0&&di===0,isLast=si===daySegs.length-1&&di===days.length-1;
+      const dur=fmtDuration(seg.startDateTime,seg.endDateTime),isTransport=['flight','train','ferry','bus'].includes(seg.type);
+      if(si>0){const prev=daySegs[si-1];const gapMs=new Date(seg.startDateTime)-new Date(prev.endDateTime||prev.startDateTime);if(gapMs>4*3600000){const gd=fmtDuration(prev.endDateTime||prev.startDateTime,seg.startDateTime);html+=`<div class="gap-indicator"><div class="gap-spine"></div><div class="gap-pill">⏱ ${gd} free</div><div class="gap-spine"></div></div>`}}
+      html+=`<div class="seg-row" onclick="openSegPanel('${seg.id}')"><div class="spine"><div class="spine-line ${isFirst?'hidden':''}"></div><div class="spine-dot" style="background:${t.color}">${t.emoji}</div><div class="spine-line ${isLast?'hidden':''}"></div></div><div class="seg-card" style="border-left-color:${t.color}"><div class="seg-top"><div class="seg-pill" style="background:${t.bg};color:${t.color}">${t.label}</div>${seg.confirmationRef?`<div class="seg-ref">${seg.confirmationRef}</div>`:''}</div><div class="seg-title">${seg.title}</div>${isTransport&&seg.fromLocation?`<div class="seg-route"><span style="flex:1">${seg.fromLocation}</span><div class="route-mid">${dur?`<div class="route-dur">${dur}</div>`:''}<div class="route-line"></div></div><span style="flex:1;text-align:right">${seg.toLocation||''}</span></div>`:seg.location?`<div class="seg-loc">📍 ${seg.location}</div>`:''}<div class="seg-bottom"><div class="seg-time">${fmtTime(seg.startDateTime)}${seg.endDateTime?` – ${fmtTime(seg.endDateTime)}`:''}</div><div class="seg-provider">${seg.provider||''}</div></div>${seg.notes?`<div class="seg-notes">${seg.notes}</div>`:''}</div></div>`;
+    });
+  });
+  html+=renderDocs(trip);
+  document.getElementById('mainBody').innerHTML=html+'</div>';
+}
+
+function showTrip(trip){
+  currentTrip=trip;reorderMode=false;
+  const btn=document.getElementById('reorderBtn');if(btn){btn.textContent='⇅ Reorder';btn.classList.remove('active')}
+  renderSidebar();
+  document.getElementById('mainHeader').style.display='flex';
+  document.getElementById('tripTitle').textContent=trip.name;
+  document.getElementById('tripDates').textContent=fmtDateRange(trip);
+  // Render stats bar
+  const s=getTripSummary(trip);
+  const statsBar=document.getElementById('statsBar');
+  const stats=[];
+  if(s.totalDays>0)stats.push({val:s.totalDays,lbl:'days'});
+  if(s.nights>0)stats.push({val:s.nights,lbl:s.nights===1?'night':'nights'});
+  if(s.flights>0)stats.push({val:s.flights,lbl:s.flights===1?'flight':'flights'});
+  if(s.flightTime)stats.push({val:s.flightTime,lbl:'in air'});
+  if(s.trains>0)stats.push({val:s.trains,lbl:s.trains===1?'train':'trains'});
+  if(s.cities.length>0)stats.push({val:s.cities.slice(0,3).join(', '),lbl:'cities'});
+  if(stats.length>0){
+    statsBar.innerHTML=stats.map(st=>`<div class="stat-item"><span class="stat-val">${st.val}</span><span class="stat-lbl">${st.lbl}</span></div>`).join('');
+    statsBar.className='stats-bar visible';
+  } else {
+    statsBar.className='stats-bar';
+  }
+  renderTripBody(trip);
+}
+
+// ── Segment panel ─────────────────────────────────────────────────────────────
+function openSegPanel(segId){const seg=currentTrip?.segments?.find(s=>s.id===segId);if(!seg)return;renderSegDetail(seg);document.getElementById('segPanel').classList.add('open')}
+function closeSegPanel(){document.getElementById('segPanel').classList.remove('open')}
+
+function renderSegDetail(seg){
+  const t=tc(seg.type),dur=fmtDuration(seg.startDateTime,seg.endDateTime),isTransport=['flight','train','ferry','bus'].includes(seg.type);
+  document.getElementById('segPanelContent').innerHTML=`
+    <div class="detail-hero" style="background:${t.color}18"><div class="detail-hero-icon">${t.emoji}</div><div class="detail-hero-type" style="color:${t.color}">${t.label}</div><div class="detail-hero-title">${seg.title}</div>${seg.provider?`<div class="detail-hero-prov">${seg.provider}</div>`:''}</div>
+    ${seg.confirmationRef?`<div class="detail-section"><div class="detail-label">Booking Reference</div><div class="ref-row"><div class="ref-val">${seg.confirmationRef}</div><button class="btn-copy" onclick="copyRef('${seg.confirmationRef}',this)">Copy</button></div></div>`:''}
+    <div class="detail-section"><div class="detail-label">Timing</div><div class="time-block"><div class="time-item"><div class="time-sub">${seg.type==='hotel'?'Check-in':'Departs'}</div><div class="time-val">${fmtTime(seg.startDateTime)}</div><div class="time-date">${fmtDay(seg.startDateTime)}</div></div>${seg.endDateTime?`<div class="time-divider">${dur?`<div class="time-dur">${dur}</div>`:''}<div class="time-line"></div></div><div class="time-item"><div class="time-sub">${seg.type==='hotel'?'Check-out':'Arrives'}</div><div class="time-val">${fmtTime(seg.endDateTime)}</div><div class="time-date">${fmtDay(seg.endDateTime)}</div></div>`:''}</div></div>
+    ${isTransport&&seg.fromLocation?`<div class="detail-section"><div class="detail-label">Route</div><div class="field-row"><div class="field-label">From</div><div class="field-val">${seg.fromLocation}</div></div><div class="field-row"><div class="field-label">To</div><div class="field-val">${seg.toLocation}</div></div></div>`:seg.location?`<div class="detail-section"><div class="detail-label">Location</div><div class="field-val">📍 ${seg.location}</div></div>`:''}
+    ${seg.notes?`<div class="detail-section"><div class="detail-label">Notes</div><div style="font-size:14px;color:var(--sub);line-height:1.6">${seg.notes}</div></div>`:''}
+    <div class="detail-actions"><button class="btn-edit" onclick="openEditForm('${seg.id}')">✏️ Edit Booking</button><button class="btn-remove" onclick="removeSeg('${seg.id}')">🗑 Remove Booking</button></div>`;
+}
+
+function openEditForm(segId){
+  const seg=currentTrip?.segments?.find(s=>s.id===segId);if(!seg)return;
+  const t=tc(seg.type),isTransport=['flight','train','ferry','bus'].includes(seg.type);
+  document.getElementById('segPanelContent').innerHTML=`
+    <div style="padding:20px 24px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)">
+      <button onclick="renderSegDetail(currentTrip.segments.find(s=>s.id==='${seg.id}'))" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted)">← Back</button>
+      <div style="font-family:var(--serif);font-size:18px;font-weight:600;flex:1">Edit Booking</div>
+      <button class="btn-primary" onclick="saveSegEdit('${seg.id}')">Save</button>
+    </div>
+    <div class="edit-form">
+      <div style="background:${t.bg};color:${t.color};display:inline-block;padding:3px 10px;border-radius:100px;font-size:11px;font-weight:700;margin-bottom:16px">${t.label}</div>
+      <div class="edit-form-group"><label class="edit-form-label">Title</label><input class="edit-form-input" id="ef-title" value="${seg.title||''}"></div>
+      <div class="edit-form-group"><label class="edit-form-label">Provider</label><input class="edit-form-input" id="ef-provider" value="${seg.provider||''}"></div>
+      <div class="edit-form-group"><label class="edit-form-label">Booking Reference</label><input class="edit-form-input mono" id="ef-ref" value="${seg.confirmationRef||''}"></div>
+      ${isTransport?`<div class="edit-form-group"><label class="edit-form-label">From</label><input class="edit-form-input" id="ef-from" value="${seg.fromLocation||''}"></div><div class="edit-form-group"><label class="edit-form-label">To</label><input class="edit-form-input" id="ef-to" value="${seg.toLocation||''}"></div>`:`<div class="edit-form-group"><label class="edit-form-label">Location</label><input class="edit-form-input" id="ef-location" value="${seg.location||''}"></div>`}
+      <div class="edit-form-group"><label class="edit-form-label">Start Date/Time</label><input class="edit-form-input mono" id="ef-start" value="${seg.startDateTime||''}"></div>
+      <div class="edit-form-group"><label class="edit-form-label">End Date/Time</label><input class="edit-form-input mono" id="ef-end" value="${seg.endDateTime||''}"></div>
+      <div class="edit-form-group"><label class="edit-form-label">Notes</label><textarea class="edit-form-textarea" id="ef-notes">${seg.notes||''}</textarea></div>
+      <button class="btn-primary" style="width:100%;justify-content:center" onclick="saveSegEdit('${seg.id}')">Save Changes</button>
+    </div>`;
+}
+
+async function saveSegEdit(segId){
+  const seg=currentTrip?.segments?.find(s=>s.id===segId);if(!seg)return;
+  const isTransport=['flight','train','ferry','bus'].includes(seg.type);
+  const updates={title:document.getElementById('ef-title')?.value||seg.title,provider:document.getElementById('ef-provider')?.value||seg.provider,confirmationRef:document.getElementById('ef-ref')?.value||seg.confirmationRef,startDateTime:document.getElementById('ef-start')?.value||seg.startDateTime,endDateTime:document.getElementById('ef-end')?.value||seg.endDateTime,notes:document.getElementById('ef-notes')?.value||seg.notes,...(isTransport?{fromLocation:document.getElementById('ef-from')?.value||seg.fromLocation,toLocation:document.getElementById('ef-to')?.value||seg.toLocation}:{location:document.getElementById('ef-location')?.value||seg.location})};
+  try{const updSegs=currentTrip.segments.map(s=>s.id===segId?{...s,...updates}:s);await api(`/trips/${currentTrip.id}`,{method:'PUT',body:JSON.stringify({...currentTrip,segments:updSegs})});await loadTrips();const r=trips.find(t=>t.id===currentTrip.id);if(r){showTrip(r);const us=r.segments.find(s=>s.id===segId);if(us)renderSegDetail(us)}}catch(e){alert('Failed to save.')}
+}
+
+function copyRef(ref,btn){navigator.clipboard.writeText(ref).then(()=>{btn.textContent='Copied!';btn.style.background='#F0FDF4';btn.style.color='#16A34A';setTimeout(()=>{btn.textContent='Copy';btn.style.background='';btn.style.color=''},2000)})}
+async function removeSeg(segId){if(!currentTrip||!confirm('Remove this booking?'))return;try{await api(`/trips/${currentTrip.id}/segments/${segId}`,{method:'DELETE'});closeSegPanel();await loadTrips();const r=trips.find(t=>t.id===currentTrip.id);if(r)showTrip(r)}catch(e){alert('Failed to remove.')}}
+async function deleteCurrentTrip(){
+  if(!currentTrip||!confirm(`Delete "${currentTrip.name}"?`))return;
+  try{await api(`/trips/${currentTrip.id}`,{method:'DELETE'});currentTrip=null;document.getElementById('mainHeader').style.display='none';await loadTrips()}catch(e){alert('Failed to delete.')}
+}
+
+// ── Import ────────────────────────────────────────────────────────────────────
+let addToExisting=false;
+function openImport(addToExistingMode=false){addToExisting=addToExistingMode;parsedResult=null;selectedTripId=addToExistingMode&&currentTrip?currentTrip.id:null;importMode='text';document.getElementById('modalTitle').textContent='Import Booking';document.getElementById('modalTabs').style.display='flex';renderModalBody();document.getElementById('importModal').classList.add('open')}
+function closeImport(){document.getElementById('importModal').classList.remove('open');parsedResult=null}
+function switchTab(tab){importMode=tab;parsedResult=null;document.querySelectorAll('.modal-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='text')||(i===1&&tab==='pdf')));renderModalBody()}
+function renderModalBody(){
+  const body=document.getElementById('modalBody'),footer=document.getElementById('modalFooter');
+  if(parsedResult){const segs=parsedResult.segments||[];body.innerHTML=`<div style="font-size:15px;font-weight:600;margin-bottom:14px">✅ Found ${segs.length} booking${segs.length!==1?'s':''}</div><div class="parsed-preview">${segs.map(s=>{const t=tc(s.type);return`<div class="parsed-seg" style="border-left-color:${t.color}"><div class="parsed-seg-title">${s.title}</div><div class="parsed-seg-meta">${t.label}${s.confirmationRef?' · '+s.confirmationRef:''}${s.provider?' · '+s.provider:''}</div></div>`}).join('')}</div><div class="trip-select"><div class="trip-select-label">Add to trip</div><div class="trip-option ${!selectedTripId?'selected':''}" onclick="selectTrip(null)">+ New trip — "${parsedResult.tripName}"</div>${trips.map(t=>`<div class="trip-option ${selectedTripId===t.id?'selected':''}" onclick="selectTrip('${t.id}')">${t.name}</div>`).join('')}</div>`;footer.innerHTML=`<button class="btn-secondary" onclick="parsedResult=null;renderModalBody()">← Back</button><button class="btn-primary" onclick="saveBooking()">✓ Save to Trip</button>`;return}
+  if(importMode==='text'){body.innerHTML=`<div class="info-box">Copy the full text from any booking confirmation email and paste it below.</div><div id="errorBox"></div><textarea id="bookingText" placeholder="Paste booking confirmation text here…"></textarea>`;footer.innerHTML=`<button class="btn-secondary" onclick="closeImport()">Cancel</button><button class="btn-primary" onclick="parseText()">✨ Parse with AI</button>`}
+  else{body.innerHTML=`<div class="info-box">Upload a PDF booking confirmation and Claude will extract all your travel details.</div><div id="errorBox"></div><div class="pdf-drop" id="pdfDrop" onclick="document.getElementById('pdf-input').click()" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleDrop(event)"><div class="pdf-drop-icon">📄</div><div class="pdf-drop-text">Drop a PDF here or click to browse</div><div class="pdf-drop-sub">Booking confirmations, e-tickets, hotel vouchers</div></div><input type="file" id="pdf-input" accept=".pdf" onchange="handlePdfSelect(event)"><div id="pdfInfo"></div>`;footer.innerHTML=`<button class="btn-secondary" onclick="closeImport()">Cancel</button><button class="btn-primary" id="parsePdfBtn" onclick="parsePdf()" disabled>✨ Parse with AI</button>`}
+}
+function selectTrip(id){selectedTripId=id;renderModalBody()}
+async function parseText(){const text=document.getElementById('bookingText')?.value?.trim();if(!text)return;showLoading('Reading your booking…');try{parsedResult=await api('/parse',{method:'POST',body:JSON.stringify({text})});if(!parsedResult.segments?.length)throw new Error('No bookings found.');renderModalBody()}catch(e){document.getElementById('modalBody').innerHTML=`<div class="error-box">⚠️ ${e.message}</div><textarea id="bookingText" placeholder="Paste booking text here…"></textarea>`;document.getElementById('modalFooter').innerHTML=`<button class="btn-secondary" onclick="closeImport()">Cancel</button><button class="btn-primary" onclick="parseText()">✨ Try Again</button>`}}
+let selectedPdfBase64=null,selectedPdfName=null;
+function handlePdfSelect(e){const f=e.target.files[0];if(f)processPdf(f)}
+function handleDrop(e){e.preventDefault();document.getElementById('pdfDrop').classList.remove('dragover');const f=e.dataTransfer.files[0];if(f&&f.type==='application/pdf')processPdf(f)}
+function processPdf(file){selectedPdfName=file.name;const r=new FileReader();r.onload=(e)=>{selectedPdfBase64=e.target.result.split(',')[1];document.getElementById('pdfInfo').innerHTML=`<div class="pdf-selected"><span style="font-size:20px">📄</span><div class="pdf-name">${file.name}</div><span style="color:var(--muted);font-size:12px">${(file.size/1024).toFixed(0)} KB</span></div>`;document.getElementById('parsePdfBtn').disabled=false};r.readAsDataURL(file)}
+async function parsePdf(){if(!selectedPdfBase64)return;showLoading('Reading your PDF…');try{parsedResult=await api('/parse-pdf',{method:'POST',body:JSON.stringify({base64:selectedPdfBase64,filename:selectedPdfName})});if(!parsedResult.segments?.length)throw new Error('No bookings found in this PDF.');renderModalBody()}catch(e){document.getElementById('errorBox').innerHTML=`<div class="error-box" style="margin-bottom:12px">⚠️ ${e.message}</div>`;document.getElementById('modalFooter').innerHTML=`<button class="btn-secondary" onclick="closeImport()">Cancel</button><button class="btn-primary" onclick="parsePdf()">✨ Try Again</button>`}}
+function showLoading(msg){document.getElementById('modalBody').innerHTML=`<div class="loading"><div class="spinner"></div>${msg}</div>`;document.getElementById('modalFooter').innerHTML=''}
+async function saveBooking(){if(!parsedResult)return;try{let trip;if(selectedTripId){await api(`/trips/${selectedTripId}/segments`,{method:'POST',body:JSON.stringify({segments:parsedResult.segments})});trip=trips.find(t=>t.id===selectedTripId)}else{trip=await api('/trips',{method:'POST',body:JSON.stringify({name:parsedResult.tripName||'New Trip',segments:parsedResult.segments})})}closeImport();await loadTrips();const r=trips.find(t=>t.id===(trip?.id||selectedTripId));if(r)showTrip(r)}catch(e){alert('Failed to save.')}}
+document.getElementById('importModal').addEventListener('click',e=>{if(e.target===document.getElementById('importModal'))closeImport()});
+loadTrips();
+</script>
+</body>
+</html>
