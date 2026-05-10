@@ -634,7 +634,7 @@ function handleSearch(q){
   const mt=trips.filter(t=>t.name?.toLowerCase().includes(q)||getCities(t).some(c=>c.toLowerCase().includes(q)));
   const ms=[];trips.forEach(trip=>{(trip.segments||[]).forEach(seg=>{const m=seg.title?.toLowerCase().includes(q)||seg.confirmationRef?.toLowerCase().includes(q)||seg.provider?.toLowerCase().includes(q)||seg.fromLocation?.toLowerCase().includes(q)||seg.toLocation?.toLowerCase().includes(q)||seg.location?.toLowerCase().includes(q)||seg.notes?.toLowerCase().includes(q);if(m&&!mt.find(t=>t.id===trip.id))ms.push({trip,seg})})});
   if(!mt.length&&!ms.length){list.innerHTML='<div style="padding:16px;color:#475569;font-size:13px;">No results found</div>';return}
-  if(mt.length){html+='<div class="section-label">Trips</div>';mt.forEach(t=>{const a=currentTrip?.id===t.id?'active':'';html+=`<div class="trip-item ${a}" onclick="showTrip(trips.find(x=>x.id==='${t.id}'))"><div class="trip-item-name">${t.name}</div><div class="trip-item-meta">${getCities(t).slice(0,3).join(' → ')}</div></div>`})}
+  if(mt.length){html+='<div class="section-label">Trips</div>';mt.forEach(t=>{const a=currentTrip?.id===t.id?'active':'';html+=`<div class="trip-item ${a}" onclick="hideCalendarSilent();showTrip(trips.find(x=>x.id==='${t.id}'))"><div class="trip-item-name">${t.name}</div><div class="trip-item-meta">${getCities(t).slice(0,3).join(' → ')}</div></div>`})}
   if(ms.length){html+='<div class="section-label">Bookings</div>';ms.forEach(({trip,seg})=>{const t=tc(seg.type);html+=`<div class="seg-result" onclick="showTrip(trips.find(x=>x.id==='${trip.id}'));setTimeout(()=>openSegPanel('${seg.id}'),300)"><div style="font-size:16px">${t.emoji}</div><div><div class="seg-result-title">${seg.title}</div><div class="seg-result-meta">${trip.name}${seg.confirmationRef?' · '+seg.confirmationRef:''}</div></div></div>`})}
   list.innerHTML=html;
 }
@@ -645,7 +645,7 @@ function renderSidebar(){
   if(!trips.length){list.innerHTML='<div style="padding:20px 8px;color:#334155;font-size:13px;line-height:1.6;">No trips yet.<br>Import a booking to start.</div>';return}
   const active=trips.filter(t=>getStatus(t)==='active'),upcoming=trips.filter(t=>getStatus(t)==='upcoming'),past=[...trips].filter(t=>getStatus(t)==='past').reverse();
   let html='';
-  const section=(label,items)=>{if(!items.length)return;html+=`<div class="section-label">${label}</div>`;items.forEach(t=>{const cities=getCities(t).slice(0,3).join(' → ');const a=currentTrip?.id===t.id?'active':'';html+=`<div class="trip-item ${a}" onclick="showTrip(trips.find(x=>x.id==='${t.id}'))"><div class="trip-status status-${getStatus(t)}">${getStatus(t)}</div><div class="trip-item-name">${t.name}</div><div class="trip-item-meta">${cities}</div></div>`})};
+  const section=(label,items)=>{if(!items.length)return;html+=`<div class="section-label">${label}</div>`;items.forEach(t=>{const cities=getCities(t).slice(0,3).join(' → ');const a=currentTrip?.id===t.id?'active':'';html+=`<div class="trip-item ${a}" onclick="hideCalendarSilent();showTrip(trips.find(x=>x.id==='${t.id}'))"><div class="trip-status status-${getStatus(t)}">${getStatus(t)}</div><div class="trip-item-name">${t.name}</div><div class="trip-item-meta">${cities}</div></div>`})};
   section('In Progress',active);section('Upcoming',upcoming);section('Past',past);list.innerHTML=html;
 }
 
